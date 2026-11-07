@@ -2,17 +2,213 @@
 <html lang="zh-Hant">
 <head>
   <meta charset="UTF-8">
-
   <meta name="viewport"
-    content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    content="width=device-width, initial-scale=1.0,
+    maximum-scale=1.0, user-scalable=no">
 
-  <title>濁水溪口｜東方白鸛 AR</title>
+  <title>濁水溪口｜雙圖卡 AR</title>
 
   <!-- A-Frame -->
   <script src="https://aframe.io/releases/1.6.0/aframe.min.js"></script>
 
   <!-- MindAR -->
   <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.5/dist/mindar-image-aframe.prod.js"></script>
+
+  <!-- GIF 動畫材質 -->
+  <script type="module">
+    import {
+      parseGIF,
+      decompressFrames
+    } from "https://esm.sh/gifuct-js@2.1.2";
+
+    AFRAME.registerComponent("animated-gif", {
+      schema: {
+        src: {type: "string"}
+      },
+
+      init: function () {
+        this.ready = false;
+        this.frames = [];
+        this.frameIndex = 0;
+        this.elapsed = 0;
+
+        this.loadGif();
+      },
+
+      loadGif: async function () {
+        try {
+          const response = await fetch(this.data.src);
+
+          if (!response.ok) {
+            throw new Error(
+              "GIF 載入失敗：" + this.data.src
+            );
+          }
+
+          const buffer = await response.arrayBuffer();
+          const gif = parseGIF(buffer);
+
+          this.frames = decompressFrames(gif, true);
+
+          if (!this.frames.length) {
+            throw new Error("GIF 沒有動畫影格");
+          }
+
+          const canvas = document.createElement("canvas");
+          canvas.width = gif.lsd.width;
+          canvas.height = gif.lsd.height;
+
+          this.canvas = canvas;
+          this.ctx = canvas.getContext("2d");
+
+          this.patchCanvas =
+            document.createElement("canvas");
+
+          this.patchCtx =
+            this.patchCanvas.getContext("2d");
+
+          this.texture = new THREE.CanvasTexture(canvas);
+
+          if (THREE.SRGBColorSpace) {
+            this.texture.colorSpace = THREE.SRGBColorSpace;
+          }
+
+          this.texture.needsUpdate = true;
+
+          this.drawFrame(0, true);
+
+          const mesh = this.el.getObject3D("mesh");
+
+          if (!mesh) {
+            throw new Error("找不到 GIF 圖層");
+          }
+
+          mesh.material.dispose();
+
+          mesh.material = new THREE.MeshBasicMaterial({
+            map: this.texture,
+            transparent: true,
+            side: THREE.DoubleSide,
+            depthWrite: false
+          });
+
+          this.ready = true;
+
+        } catch (error) {
+          console.error(error);
+          document.getElementById("status").textContent =
+            "GIF 載入失敗，請檢查檔名或網路";
+          document.getElementById("status").style.display =
+            "block";
+        }
+      },
+
+      drawFrame: function (index, reset) {
+        if (reset) {
+          this.ctx.clearRect(
+            0, 0,
+            this.canvas.width,
+            this.canvas.height
+          );
+
+          this.previousFrame = null;
+          this.savedImage = null;
+        }
+
+        // 清除前一格需要清除的部分
+        if (this.previousFrame) {
+          const previous = this.previousFrame;
+
+          if (previous.disposalType === 2) {
+            this.ctx.clearRect(
+              previous.dims.left,
+              previous.dims.top,
+              previous.dims.width,
+              previous.dims.height
+            );
+          }
+
+          if (
+            previous.disposalType === 3 &&
+            this.savedImage
+          ) {
+            this.ctx.putImageData(
+              this.savedImage, 0, 0
+            );
+          }
+        }
+
+        const frame = this.frames[index];
+        const d = frame.dims;
+
+        // GIF 需要還原上一畫面時保留快照
+        this.savedImage =
+          frame.disposalType === 3
+            ? this.ctx.getImageData(
+                0, 0,
+                this.canvas.width,
+                this.canvas.height
+              )
+            : null;
+
+        this.patchCanvas.width = d.width;
+        this.patchCanvas.height = d.height;
+
+        const imageData = new ImageData(
+          frame.patch,
+          d.width,
+          d.height
+        );
+
+        this.patchCtx.putImageData(
+          imageData, 0, 0
+        );
+
+        this.ctx.drawImage(
+          this.patchCanvas,
+          d.left,
+          d.top
+        );
+
+        this.previousFrame = frame;
+        this.texture.needsUpdate = true;
+      },
+
+      tick: function (time, delta) {
+        if (!this.ready || !this.el.object3D.visible) {
+          return;
+        }
+
+        this.elapsed += Math.min(delta, 200);
+
+        let steps = 0;
+
+        while (steps < 5) {
+          const current = this.frames[this.frameIndex];
+          const delay = Math.max(current.delay || 100, 40);
+
+          if (this.elapsed < delay) break;
+
+          this.elapsed -= delay;
+          this.frameIndex =
+            (this.frameIndex + 1) % this.frames.length;
+
+          this.drawFrame(
+            this.frameIndex,
+            this.frameIndex === 0
+          );
+
+          steps++;
+        }
+      },
+
+      remove: function () {
+        if (this.texture) {
+          this.texture.dispose();
+        }
+      }
+    });
+  </script>
 
   <style>
     html, body {
@@ -28,29 +224,18 @@
       position: fixed;
       inset: 0;
       width: 100vw;
-      height: 100vh;
       height: 100dvh;
       overflow: hidden;
     }
 
-    a-scene {
-      width: 100%;
-      height: 100%;
-    }
-
-    /* 固定背景，不受 AR 追蹤影響 */
-    #fixed-background {
+    .fixed-background {
       position: absolute;
       top: 50%;
       left: 50%;
-
-      width: min(100vw, 177.78vh);
       width: min(100vw, 177.78dvh);
       aspect-ratio: 16 / 9;
-
       transform: translate(-50%, -50%);
       object-fit: contain;
-
       display: none;
       pointer-events: none;
       z-index: 1;
@@ -59,111 +244,219 @@
     #ar-scene {
       position: absolute;
       inset: 0;
+      width: 100%;
+      height: 100%;
       z-index: 2;
+    }
+
+    #status {
+      position: absolute;
+      bottom: 20px;
+      left: 5%;
+      width: 90%;
+      box-sizing: border-box;
+      padding: 10px;
+      border-radius: 8px;
+      background: rgba(0,0,0,0.7);
+      color: white;
+      font-size: 14px;
+      text-align: center;
+      z-index: 10;
+      display: none;
     }
   </style>
 </head>
 
 <body>
 
-  <div class="ar-container">
+<div class="ar-container">
 
-    <!-- 固定在手機畫面的背景 -->
-    <img
-      id="fixed-background"
-      src="background.png"
-      alt="東方白鸛背景"
-    >
+  <!-- 第一張圖卡的固定背景 -->
+  <img
+    id="background1"
+    class="fixed-background"
+    src="background.png"
+  >
 
-    <a-scene
-      id="ar-scene"
-      mindar-image="imageTargetSrc: targets.mind; autoStart: true; uiScanning: true; uiLoading: true;"
-      color-space="sRGB"
-      renderer="colorManagement: true, alpha: true"
-      vr-mode-ui="enabled: false"
-      device-orientation-permission-ui="enabled: false"
-      background="color: #000000; transparent: true"
-      embedded
-    >
+  <!-- 第二張圖卡的固定背景 -->
+  <img
+    id="background2"
+    class="fixed-background"
+    src="background2.png"
+  >
 
-      <a-assets timeout="30000">
-        <img id="midground1" src="midground1.png">
-        <img id="midground2" src="midground2.png">
-        <img id="foreground" src="foreground.png">
-      </a-assets>
+  <div id="status"></div>
 
-      <a-camera
-        position="0 0 0"
-        look-controls="enabled: false">
-      </a-camera>
+  <a-scene
+    id="ar-scene"
+    mindar-image="imageTargetSrc: targets.mind;
+                  autoStart: true;
+                  uiScanning: true;
+                  uiLoading: true;
+                  maxTrack: 1;"
+    color-space="sRGB"
+    renderer="colorManagement: true; alpha: true"
+    background="color: #000000; transparent: true"
+    vr-mode-ui="enabled: false"
+    device-orientation-permission-ui="enabled: false"
+    embedded
+  >
 
-      <a-entity
-        id="ar-target"
-        mindar-image-target="targetIndex: 0">
+    <a-assets timeout="30000">
 
-        <!-- 第二層：右到左平移 -->
-        <a-image
-          src="#midground1"
-          position="0.08 0 0.01"
-          width="1.6"
-          height="0.9"
-          transparent="true"
-          material="shader: flat; side: double; depthWrite: false"
-          animation="property: position;
-                     from: 0.08 0 0.01;
-                     to: -0.08 0 0.01;
-                     dir: alternate;
-                     dur: 3000;
-                     loop: true;
-                     easing: easeInOutSine">
-        </a-image>
+      <!-- 第一組素材 -->
+      <img id="mid1" src="midground1.png">
+      <img id="mid2" src="midground2.png">
+      <img id="front1" src="foreground.png">
 
-        <!-- 第三層：不播放動畫 -->
-        <a-image
-          src="#midground2"
-          position="0 0 0.02"
-          width="1.6"
-          height="0.9"
-          transparent="true"
-          material="shader: flat; side: double; depthWrite: false">
-        </a-image>
+      <!-- 第二組 PNG 素材 -->
+      <img id="mid3" src="midground3.png">
 
-        <!-- 最前層：右到左平移 -->
-        <a-image
-          src="#foreground"
-          position="0.12 0 0.03"
-          width="1.6"
-          height="0.9"
-          transparent="true"
-          material="shader: flat; side: double; depthWrite: false"
-          animation="property: position;
-                     from: 0.12 0 0.03;
-                     to: -0.12 0 0.03;
-                     dir: alternate;
-                     dur: 2200;
-                     loop: true;
-                     easing: easeInOutSine">
-        </a-image>
+    </a-assets>
 
-      </a-entity>
+    <a-camera
+      position="0 0 0"
+      look-controls="enabled: false">
+    </a-camera>
 
-    </a-scene>
-  </div>
+    <!-- ====================== -->
+    <!-- 第一張圖卡：東方白鸛 -->
+    <!-- ====================== -->
 
-  <script>
-    const target = document.querySelector("#ar-target");
-    const background = document.querySelector("#fixed-background");
+    <a-entity
+      id="target1"
+      mindar-image-target="targetIndex: 0">
 
-    // 辨識到圖卡時顯示固定背景
-    target.addEventListener("targetFound", () => {
-      background.style.display = "block";
-    });
+      <!-- 中景1：左右移動 -->
+      <a-image
+        src="#mid1"
+        position="0.08 0 0.01"
+        width="1.6"
+        height="0.9"
+        transparent="true"
+        material="shader: flat; depthWrite: false"
+        animation="property: position;
+                   from: 0.08 0 0.01;
+                   to: -0.08 0 0.01;
+                   dir: alternate;
+                   dur: 3000;
+                   loop: true;
+                   easing: easeInOutSine">
+      </a-image>
 
-    // 圖卡消失時隱藏背景
-    target.addEventListener("targetLost", () => {
-      background.style.display = "none";
-    });
-  </script>
+      <!-- 中景2：不動 -->
+      <a-image
+        src="#mid2"
+        position="0 0 0.02"
+        width="1.6"
+        height="0.9"
+        transparent="true"
+        material="shader: flat; depthWrite: false">
+      </a-image>
+
+      <!-- 前景：左右移動 -->
+      <a-image
+        src="#front1"
+        position="0.12 0 0.03"
+        width="1.6"
+        height="0.9"
+        transparent="true"
+        material="shader: flat; depthWrite: false"
+        animation="property: position;
+                   from: 0.12 0 0.03;
+                   to: -0.12 0 0.03;
+                   dir: alternate;
+                   dur: 2200;
+                   loop: true;
+                   easing: easeInOutSine">
+      </a-image>
+
+    </a-entity>
+
+    <!-- ====================== -->
+    <!-- 第二張圖卡：PNG + GIF -->
+    <!-- ====================== -->
+
+    <a-entity
+      id="target2"
+      mindar-image-target="targetIndex: 1">
+
+      <!-- 中景 PNG：固定，不播放動畫 -->
+      <a-image
+        src="#mid3"
+        position="0 0 0.01"
+        width="1.6"
+        height="0.9"
+        transparent="true"
+        material="shader: flat; depthWrite: false">
+      </a-image>
+
+      <!-- 第一個 GIF：自動播放 -->
+      <a-plane
+        position="0 0 0.02"
+        width="1.6"
+        height="0.9"
+        material="shader: flat;
+                  transparent: true;
+                  depthWrite: false"
+        animated-gif="src: foreground2-1.gif">
+      </a-plane>
+
+      <!-- 第二個 GIF：自動播放 -->
+      <a-plane
+        position="0 0 0.03"
+        width="1.6"
+        height="0.9"
+        material="shader: flat;
+                  transparent: true;
+                  depthWrite: false"
+        animated-gif="src: foreground2-2.gif">
+      </a-plane>
+
+    </a-entity>
+
+  </a-scene>
+
+</div>
+
+<script>
+  const target1 =
+    document.querySelector("#target1");
+
+  const target2 =
+    document.querySelector("#target2");
+
+  const background1 =
+    document.querySelector("#background1");
+
+  const background2 =
+    document.querySelector("#background2");
+
+  function hideBackgrounds() {
+    background1.style.display = "none";
+    background2.style.display = "none";
+  }
+
+  // 掃描到第一張圖卡
+  target1.addEventListener("targetFound", () => {
+    hideBackgrounds();
+    background1.style.display = "block";
+  });
+
+  target1.addEventListener("targetLost", () => {
+    background1.style.display = "none";
+  });
+
+  // 掃描到第二張圖卡
+  target2.addEventListener("targetFound", () => {
+    hideBackgrounds();
+    background2.style.display = "block";
+  });
+
+  target2.addEventListener("targetLost", () => {
+    background2.style.display = "none";
+  });
+</script>
 
 </body>
 </html>
