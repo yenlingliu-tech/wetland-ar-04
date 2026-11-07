@@ -1,9 +1,11 @@
 <!DOCTYPE html>
 <html lang="zh-Hant">
 <head>
-  <meta charset="UTF-8" />
+  <meta charset="UTF-8">
+
   <meta name="viewport"
-    content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+
   <title>濁水溪口｜東方白鸛 AR</title>
 
   <!-- A-Frame -->
@@ -35,70 +37,133 @@
       width: 100%;
       height: 100%;
     }
+
+    /* 固定背景，不受 AR 追蹤影響 */
+    #fixed-background {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+
+      width: min(100vw, 177.78vh);
+      width: min(100vw, 177.78dvh);
+      aspect-ratio: 16 / 9;
+
+      transform: translate(-50%, -50%);
+      object-fit: contain;
+
+      display: none;
+      pointer-events: none;
+      z-index: 1;
+    }
+
+    #ar-scene {
+      position: absolute;
+      inset: 0;
+      z-index: 2;
+    }
   </style>
 </head>
 
 <body>
+
   <div class="ar-container">
+
+    <!-- 固定在手機畫面的背景 -->
+    <img
+      id="fixed-background"
+      src="background.png"
+      alt="東方白鸛背景"
+    >
+
     <a-scene
+      id="ar-scene"
       mindar-image="imageTargetSrc: targets.mind; autoStart: true; uiScanning: true; uiLoading: true;"
       color-space="sRGB"
-      renderer="colorManagement: true, physicallyCorrectLights"
+      renderer="colorManagement: true, alpha: true"
       vr-mode-ui="enabled: false"
       device-orientation-permission-ui="enabled: false"
+      background="color: #000000; transparent: true"
+      embedded
     >
-      <a-assets>
-        <img id="background" src="background.png" />
-        <img id="midground1" src="midground1.png" />
-        <img id="midground2" src="midground2.png" />
-        <img id="foreground" src="foreground.png" />
+
+      <a-assets timeout="30000">
+        <img id="midground1" src="midground1.png">
+        <img id="midground2" src="midground2.png">
+        <img id="foreground" src="foreground.png">
       </a-assets>
 
-      <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
+      <a-camera
+        position="0 0 0"
+        look-controls="enabled: false">
+      </a-camera>
 
-      <!-- targetIndex 0 代表你的第一張辨識圖 -->
-      <a-entity mindar-image-target="targetIndex: 0">
+      <a-entity
+        id="ar-target"
+        mindar-image-target="targetIndex: 0">
 
-        <!-- 最後方：background（不動） -->
-        <a-image
-          src="#background"
-          position="0 0 0"
-          width="1.6"
-          height="0.9"
-          transparent="true">
-        </a-image>
-
-        <!-- 第二層：midground1（右到左平移） -->
+        <!-- 第二層：右到左平移 -->
         <a-image
           src="#midground1"
           position="0.08 0 0.01"
           width="1.6"
           height="0.9"
           transparent="true"
-          animation="property: position; from: 0.08 0 0.01; to: -0.08 0 0.01; dir: alternate; dur: 3000; loop: true; easing: easeInOutSine">
+          material="shader: flat; side: double; depthWrite: false"
+          animation="property: position;
+                     from: 0.08 0 0.01;
+                     to: -0.08 0 0.01;
+                     dir: alternate;
+                     dur: 3000;
+                     loop: true;
+                     easing: easeInOutSine">
         </a-image>
 
-        <!-- 第三層：midground2（不動） -->
+        <!-- 第三層：不播放動畫 -->
         <a-image
           src="#midground2"
           position="0 0 0.02"
           width="1.6"
           height="0.9"
-          transparent="true">
+          transparent="true"
+          material="shader: flat; side: double; depthWrite: false">
         </a-image>
 
-        <!-- 最前方：foreground（右到左平移） -->
+        <!-- 最前層：右到左平移 -->
         <a-image
           src="#foreground"
           position="0.12 0 0.03"
           width="1.6"
           height="0.9"
           transparent="true"
-          animation="property: position; from: 0.12 0 0.03; to: -0.12 0 0.03; dir: alternate; dur: 2200; loop: true; easing: easeInOutSine">
+          material="shader: flat; side: double; depthWrite: false"
+          animation="property: position;
+                     from: 0.12 0 0.03;
+                     to: -0.12 0 0.03;
+                     dir: alternate;
+                     dur: 2200;
+                     loop: true;
+                     easing: easeInOutSine">
         </a-image>
 
       </a-entity>
+
     </a-scene>
   </div>
+
+  <script>
+    const target = document.querySelector("#ar-target");
+    const background = document.querySelector("#fixed-background");
+
+    // 辨識到圖卡時顯示固定背景
+    target.addEventListener("targetFound", () => {
+      background.style.display = "block";
+    });
+
+    // 圖卡消失時隱藏背景
+    target.addEventListener("targetLost", () => {
+      background.style.display = "none";
+    });
+  </script>
+
 </body>
 </html>
