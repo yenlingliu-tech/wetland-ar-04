@@ -7,10 +7,12 @@
     content="width=device-width, initial-scale=1.0,
     maximum-scale=1.0, user-scalable=no">
 
-  <title>濁水溪口｜四圖卡辨識診斷</title>
+  <title>濁水溪口｜四圖卡 AR</title>
 
+  <!-- A-Frame -->
   <script src="https://aframe.io/releases/1.6.0/aframe.min.js"></script>
 
+  <!-- MindAR -->
   <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.5/dist/mindar-image-aframe.prod.js"></script>
 
   <style>
@@ -24,59 +26,93 @@
       font-family: sans-serif;
     }
 
-    a-scene {
+    .ar-container {
+      position: fixed;
+      inset: 0;
+      width: 100vw;
+      height: 100dvh;
+      overflow: hidden;
+    }
+
+    /* 背景固定在手機畫面 */
+    .fixed-background {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+
+      width: min(100vw, 177.78dvh);
+      aspect-ratio: 16 / 9;
+
+      transform: translate(-50%, -50%);
+      object-fit: contain;
+
+      display: none;
+      pointer-events: none;
+      z-index: 1;
+    }
+
+    #scene {
+      position: absolute;
+      inset: 0;
       width: 100%;
       height: 100%;
+      z-index: 2;
     }
 
-    #debug {
+    #status {
       position: fixed;
-      top: 12px;
-      left: 5%;
-      width: 90%;
-      box-sizing: border-box;
-      padding: 12px;
-      background: rgba(0,0,0,0.8);
-      color: white;
-      border-radius: 10px;
+      top: 20px;
+      left: 50%;
+
+      transform: translateX(-50%);
       z-index: 9999;
-      font-size: 13px;
-      line-height: 1.7;
+
+      padding: 10px 16px;
+      max-width: 90%;
+
+      border-radius: 10px;
+      background: rgba(0,0,0,0.75);
+
+      color: white;
+      font-size: 14px;
+      text-align: center;
       pointer-events: none;
-    }
-
-    .ok {
-      color: #80ffb0;
-    }
-
-    .error {
-      color: #ff9292;
     }
   </style>
 </head>
 
 <body>
 
-  <!-- 辨識狀態顯示 -->
-  <div id="debug">
-    <div id="arStatus">
-      AR 狀態：正在初始化
-    </div>
+<div class="ar-container">
 
-    <div id="fileStatus">
-      辨識檔：正在檢查
-    </div>
+  <!-- 背景延遲載入 -->
+  <img
+    id="bg0"
+    class="fixed-background"
+    data-src="./background.png">
 
-    <div id="targetStatus">
-      辨識結果：尚未辨識
-    </div>
-  </div>
+  <img
+    id="bg1"
+    class="fixed-background"
+    data-src="./background2.png">
+
+  <img
+    id="bg2"
+    class="fixed-background"
+    data-src="./background3.png">
+
+  <img
+    id="bg3"
+    class="fixed-background"
+    data-src="./background4.png">
+
+  <div id="status">正在啟動 AR...</div>
 
   <a-scene
     id="scene"
 
     mindar-image="
-      imageTargetSrc: ./targets.mind?v=debug4_01;
+      imageTargetSrc: ./targets.mind;
       autoStart: true;
       maxTrack: 1;
       uiLoading: no;
@@ -91,210 +127,399 @@
       alpha: true;
     "
 
+    background="transparent: true"
+
     vr-mode-ui="enabled: false"
     device-orientation-permission-ui="enabled: false"
     embedded>
+
+    <!-- 不使用 a-assets 預載圖片 -->
 
     <a-camera
       position="0 0 0"
       look-controls="enabled: false">
     </a-camera>
 
-    <!-- 圖卡 1：紅色測試方塊 -->
+
+    <!-- ====================== -->
+    <!-- AR 01 -->
+    <!-- ====================== -->
+
     <a-entity
       id="target0"
       mindar-image-target="targetIndex: 0">
 
-      <a-plane
-        color="#ff4444"
-        position="0 0 0.05"
-        width="0.7"
-        height="0.4"
-        material="opacity: 0.75;
-                  transparent: true;
-                  side: double">
-      </a-plane>
+      <!-- 中景1：左右平移 -->
+      <a-image
+        data-src="./midground1.png"
+        visible="false"
+
+        position="0.08 0 0.01"
+        width="1.6"
+        height="0.9"
+
+        material="
+          shader: flat;
+          transparent: true;
+          depthWrite: false;
+          side: double;
+        "
+
+        animation="
+          property: position;
+          from: 0.08 0 0.01;
+          to: -0.08 0 0.01;
+          dur: 3000;
+          dir: alternate;
+          loop: true;
+          easing: easeInOutSine;
+        ">
+      </a-image>
+
+      <!-- 中景2：不動 -->
+      <a-image
+        data-src="./midground2.png"
+        visible="false"
+
+        position="0 0 0.02"
+        width="1.6"
+        height="0.9"
+
+        material="
+          shader: flat;
+          transparent: true;
+          depthWrite: false;
+          side: double;
+        ">
+      </a-image>
+
+      <!-- 前景：左右平移 -->
+      <a-image
+        data-src="./foreground.png"
+        visible="false"
+
+        position="0.12 0 0.03"
+        width="1.6"
+        height="0.9"
+
+        material="
+          shader: flat;
+          transparent: true;
+          depthWrite: false;
+          side: double;
+        "
+
+        animation="
+          property: position;
+          from: 0.12 0 0.03;
+          to: -0.12 0 0.03;
+          dur: 2200;
+          dir: alternate;
+          loop: true;
+          easing: easeInOutSine;
+        ">
+      </a-image>
 
     </a-entity>
 
-    <!-- 圖卡 2：綠色測試方塊 -->
+
+    <!-- ====================== -->
+    <!-- AR 02 -->
+    <!-- ====================== -->
+
     <a-entity
       id="target1"
       mindar-image-target="targetIndex: 1">
 
-      <a-plane
-        color="#44ff44"
-        position="0 0 0.05"
-        width="0.7"
-        height="0.4"
-        material="opacity: 0.75;
-                  transparent: true;
-                  side: double">
-      </a-plane>
+      <!-- 中景：不動 -->
+      <a-image
+        data-src="./midground3.png"
+        visible="false"
+
+        position="0 0 0.01"
+        width="1.6"
+        height="0.9"
+
+        material="
+          shader: flat;
+          transparent: true;
+          depthWrite: false;
+          side: double;
+        ">
+      </a-image>
+
+      <!-- GIF 暫時不載入 -->
 
     </a-entity>
 
-    <!-- 圖卡 3：藍色測試方塊 -->
+
+    <!-- ====================== -->
+    <!-- AR 03 -->
+    <!-- ====================== -->
+
     <a-entity
       id="target2"
       mindar-image-target="targetIndex: 2">
 
-      <a-plane
-        color="#4488ff"
-        position="0 0 0.05"
-        width="0.7"
-        height="0.4"
-        material="opacity: 0.75;
-                  transparent: true;
-                  side: double">
-      </a-plane>
+      <!-- 中景：斜向移動 -->
+      <a-image
+        data-src="./midground3-1.png"
+        visible="false"
+
+        position="-0.20 0.08 0.08"
+        width="1.1"
+        height="0.75"
+
+        material="
+          shader: flat;
+          transparent: true;
+          depthWrite: false;
+          side: double;
+        "
+
+        animation="
+          property: position;
+          from: -0.20 0.08 0.08;
+          to: 0.25 -0.08 0.16;
+          dur: 1800;
+          dir: alternate;
+          loop: true;
+          easing: easeInOutSine;
+        ">
+      </a-image>
+
+      <!-- 前景：左右移動 -->
+      <a-image
+        data-src="./foreground3.png"
+        visible="false"
+
+        position="0.34 -0.15 0.18"
+        width="0.65"
+        height="0.6"
+
+        material="
+          shader: flat;
+          transparent: true;
+          depthWrite: false;
+          side: double;
+        "
+
+        animation="
+          property: position;
+          from: 0.10 -0.15 0.18;
+          to: 0.40 -0.15 0.18;
+          dur: 2000;
+          dir: alternate;
+          loop: true;
+          easing: easeInOutSine;
+        ">
+      </a-image>
 
     </a-entity>
 
-    <!-- 圖卡 4：黃色測試方塊 -->
+
+    <!-- ====================== -->
+    <!-- AR 04 -->
+    <!-- ====================== -->
+
     <a-entity
       id="target3"
       mindar-image-target="targetIndex: 3">
 
-      <a-plane
-        color="#ffff44"
-        position="0 0 0.05"
-        width="0.7"
-        height="0.4"
-        material="opacity: 0.75;
-                  transparent: true;
-                  side: double">
-      </a-plane>
+      <!-- 中景：左上到右下 -->
+      <a-image
+        data-src="./midground4.png"
+        visible="false"
+
+        position="-0.20 0.08 0.08"
+        width="1.1"
+        height="0.75"
+
+        material="
+          shader: flat;
+          transparent: true;
+          depthWrite: false;
+          side: double;
+        "
+
+        animation="
+          property: position;
+          from: -0.20 0.08 0.08;
+          to: 0.25 -0.08 0.08;
+          dur: 3000;
+          dir: alternate;
+          loop: true;
+          easing: easeInOutSine;
+        ">
+      </a-image>
 
     </a-entity>
 
   </a-scene>
+</div>
 
-  <script>
-    const scene = document.getElementById("scene");
 
-    const arStatus =
-      document.getElementById("arStatus");
+<script>
+  const scene = document.getElementById("scene");
+  const statusBox = document.getElementById("status");
 
-    const fileStatus =
-      document.getElementById("fileStatus");
+  const targets = [
+    document.getElementById("target0"),
+    document.getElementById("target1"),
+    document.getElementById("target2"),
+    document.getElementById("target3")
+  ];
 
-    const targetStatus =
-      document.getElementById("targetStatus");
+  const backgrounds = [
+    document.getElementById("bg0"),
+    document.getElementById("bg1"),
+    document.getElementById("bg2"),
+    document.getElementById("bg3")
+  ];
 
-    // MindAR 啟動成功
-    scene.addEventListener("arReady", () => {
-      arStatus.textContent =
-        "AR 狀態：已啟動，請掃描圖卡";
+  const loadedGroups = new Set();
 
-      arStatus.className = "ok";
-    });
+  let currentTarget = -1;
 
-    // MindAR 啟動失敗
-    scene.addEventListener("arError", () => {
-      arStatus.textContent =
-        "AR 狀態：啟動錯誤";
+  // 載入單張 AR 圖片
+  function loadARImage(element) {
 
-      arStatus.className = "error";
-    });
-
-    // 四張圖卡
-    for (let i = 0; i < 4; i++) {
-
-      const target =
-        document.getElementById("target" + i);
-
-      target.addEventListener("targetFound", () => {
-        targetStatus.textContent =
-          "辨識成功！targetIndex: " + i;
-
-        targetStatus.className = "ok";
-
-        console.log("辨識成功：", i);
-      });
-
-      target.addEventListener("targetLost", () => {
-        targetStatus.textContent =
-          "圖卡 " + (i + 1) + " 已離開鏡頭";
-
-        targetStatus.className = "";
-      });
+    if (element.dataset.loading === "true") {
+      return;
     }
 
-    // 檢查 targets.mind 是否能下載，
-    // 並嘗試讀取 MindAR v2 格式中的圖卡數量
-    async function checkTargetsFile() {
+    const url = element.dataset.src;
 
-      try {
-        const response = await fetch(
-          "./targets.mind?v=debug4_01"
-        );
+    if (!url) return;
 
-        if (!response.ok) {
-          throw new Error(
-            "HTTP " + response.status
-          );
-        }
+    element.dataset.loading = "true";
 
-        const buffer = await response.arrayBuffer();
-        const bytes = new Uint8Array(buffer);
+    const image = new Image();
 
-        const size =
-          (buffer.byteLength / 1024 / 1024).toFixed(2);
+    image.onload = function () {
 
-        let count = null;
+      element.setAttribute("src", url);
+      element.setAttribute("visible", true);
 
-        // 適用於目前 MindAR 編譯器的 v2 檔頭
-        if (
-          bytes.length > 16 &&
-          bytes[0] === 0x82 &&
-          bytes[1] === 0xa1 &&
-          bytes[2] === 0x76 &&
-          bytes[3] === 2 &&
-          bytes[4] === 0xa8
-        ) {
-          const marker = bytes[13];
+      element.dataset.loaded = "true";
 
-          if (marker >= 0x90 && marker <= 0x9f) {
-            count = marker - 0x90;
-          }
-        }
+      console.log("圖片載入成功：", url);
+    };
 
-        if (count !== null) {
-          fileStatus.textContent =
-            "辨識檔：" + size +
-            " MB，包含 " + count + " 張圖卡";
+    image.onerror = function () {
 
-          fileStatus.className =
-            count === 4 ? "ok" : "error";
-        } else {
-          fileStatus.textContent =
-            "辨識檔：已取得 " + size +
-            " MB，圖卡數量無法判讀";
-        }
+      element.dataset.loading = "false";
 
-      } catch (error) {
-        fileStatus.textContent =
-          "辨識檔讀取失敗：" + error.message;
+      statusBox.textContent =
+        "圖片載入失敗：" + url;
 
-        fileStatus.className = "error";
+      console.error("圖片載入失敗：", url);
+    };
 
-        console.error(error);
-      }
+    image.src = url;
+  }
+
+  // 載入固定背景
+  function loadBackground(index) {
+
+    const bg = backgrounds[index];
+
+    if (!bg.getAttribute("src")) {
+      bg.setAttribute("src", bg.dataset.src);
     }
 
-    checkTargetsFile();
+    backgrounds.forEach((item, i) => {
+      item.style.display =
+        i === index ? "block" : "none";
+    });
+  }
 
-    window.addEventListener("unhandledrejection", e => {
-      console.error("非同步錯誤：", e.reason);
+  // 掃描到圖卡後才載入圖片
+  function loadGroup(index) {
 
-      arStatus.textContent =
-        "程式發生錯誤，請查看主控台";
+    if (loadedGroups.has(index)) {
+      return;
+    }
 
-      arStatus.className = "error";
+    loadedGroups.add(index);
+
+    const target = targets[index];
+
+    const images =
+      target.querySelectorAll("a-image[data-src]");
+
+    images.forEach(image => {
+      loadARImage(image);
+    });
+  }
+
+  // AR 啟動成功
+  scene.addEventListener("arReady", () => {
+
+    statusBox.textContent =
+      "AR 已啟動，請掃描圖卡";
+
+    console.log("MindAR 啟動成功");
+  });
+
+  // AR 啟動錯誤
+  scene.addEventListener("arError", () => {
+
+    statusBox.textContent =
+      "AR 啟動失敗，請檢查辨識檔";
+
+    console.error("MindAR 啟動失敗");
+  });
+
+  // 四張圖卡
+  targets.forEach((target, index) => {
+
+    target.addEventListener("targetFound", () => {
+
+      currentTarget = index;
+
+      statusBox.textContent =
+        "辨識成功！AR " + (index + 1);
+
+      // 顯示對應背景
+      loadBackground(index);
+
+      // 第一次辨識才載入這組 PNG
+      loadGroup(index);
+
+      console.log(
+        "辨識成功：targetIndex " + index
+      );
     });
 
-  </script>
+    target.addEventListener("targetLost", () => {
+
+      if (currentTarget !== index) return;
+
+      currentTarget = -1;
+
+      backgrounds.forEach(bg => {
+        bg.style.display = "none";
+      });
+
+      statusBox.textContent =
+        "請對準 AR 圖卡";
+    });
+
+  });
+
+  // 背景圖片錯誤提示
+  backgrounds.forEach(bg => {
+
+    bg.addEventListener("error", () => {
+
+      statusBox.textContent =
+        "背景載入失敗：" + bg.dataset.src;
+    });
+
+  });
+
+</script>
 
 </body>
 </html>
