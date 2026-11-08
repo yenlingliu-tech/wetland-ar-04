@@ -7,7 +7,7 @@
     content="width=device-width, initial-scale=1.0,
     maximum-scale=1.0, user-scalable=no">
 
-  <title>濁水溪口｜四圖卡 AR 測試版</title>
+  <title>濁水溪口｜四圖卡 AR</title>
 
   <!-- A-Frame -->
   <script src="https://aframe.io/releases/1.6.0/aframe.min.js"></script>
@@ -23,17 +23,18 @@
       height: 100%;
       overflow: hidden;
       background: black;
-      font-family: sans-serif;
     }
 
     .ar-container {
       position: fixed;
       inset: 0;
       width: 100vw;
+      height: 100vh;
       height: 100dvh;
       overflow: hidden;
     }
 
+    /* 四組背景固定在手機畫面 */
     .fixed-background {
       position: absolute;
       top: 50%;
@@ -61,15 +62,15 @@
       left: 50%;
       transform: translateX(-50%);
       z-index: 9999;
-      width: max-content;
-      max-width: 85%;
-      padding: 10px 15px;
-      border-radius: 10px;
-      background: rgba(0,0,0,0.75);
+      padding: 10px 16px;
+      background: rgba(0,0,0,0.65);
       color: white;
-      text-align: center;
+      border-radius: 10px;
+      font-family: sans-serif;
       font-size: 14px;
+      text-align: center;
       pointer-events: none;
+      max-width: 90%;
     }
   </style>
 </head>
@@ -78,36 +79,40 @@
 
 <div class="ar-container">
 
-  <!-- 四組背景 -->
-  <img id="bg1" class="fixed-background"
+  <!-- 四組固定背景 -->
+  <img
+    id="background1"
+    class="fixed-background"
     src="./background.png">
 
-  <img id="bg2" class="fixed-background"
+  <img
+    id="background2"
+    class="fixed-background"
     src="./background2.png">
 
-  <img id="bg3" class="fixed-background"
+  <img
+    id="background3"
+    class="fixed-background"
     src="./background3.png">
 
-  <img id="bg4" class="fixed-background"
+  <img
+    id="background4"
+    class="fixed-background"
     src="./background4.png">
 
-  <div id="status">正在初始化 AR...</div>
+  <div id="status">請對準 AR 圖卡</div>
 
   <a-scene
     id="ar-scene"
-
     mindar-image="
       imageTargetSrc: ./targets.mind;
       autoStart: true;
       maxTrack: 1;
-      uiLoading: true;
-      uiScanning: true;
       filterMinCF: 0.001;
       filterBeta: 1000;
       warmupTolerance: 5;
       missTolerance: 5;
     "
-
     color-space="sRGB"
     renderer="colorManagement: true; alpha: true"
     background="color: #000000; transparent: true"
@@ -115,8 +120,7 @@
     device-orientation-permission-ui="enabled: false"
     embedded>
 
-    <!-- 只載入 PNG -->
-    <a-assets timeout="15000">
+    <a-assets timeout="30000">
 
       <!-- AR 01 -->
       <img id="mid1" src="./midground1.png">
@@ -140,100 +144,183 @@
       look-controls="enabled: false">
     </a-camera>
 
-    <!-- AR 01 -->
+
+    <!-- ========================== -->
+    <!-- AR 01：第一張圖卡          -->
+    <!-- ========================== -->
+
     <a-entity
       id="target1"
       mindar-image-target="targetIndex: 0">
 
+      <!-- 中景1：左右平移 -->
       <a-image
         src="#mid1"
-        position="0 0 0.01"
+        position="0.08 0 0.01"
         width="1.6"
         height="0.9"
-        material="shader: flat;
-                  transparent: true;
-                  depthWrite: false">
+        material="shader: flat; transparent: true;
+                  depthWrite: false; side: double"
+        animation="
+          property: position;
+          from: 0.08 0 0.01;
+          to: -0.08 0 0.01;
+          dur: 3000;
+          dir: alternate;
+          loop: true;
+          easing: easeInOutSine;
+        ">
       </a-image>
 
+      <!-- 中景2：不動 -->
       <a-image
         src="#mid2"
         position="0 0 0.02"
         width="1.6"
         height="0.9"
-        material="shader: flat;
-                  transparent: true;
-                  depthWrite: false">
+        material="shader: flat; transparent: true;
+                  depthWrite: false; side: double">
       </a-image>
 
+      <!-- 前景：左右平移 -->
       <a-image
         src="#front1"
-        position="0 0 0.03"
+        position="0.12 0 0.03"
         width="1.6"
         height="0.9"
-        material="shader: flat;
-                  transparent: true;
-                  depthWrite: false">
+        material="shader: flat; transparent: true;
+                  depthWrite: false; side: double"
+        animation="
+          property: position;
+          from: 0.12 0 0.03;
+          to: -0.12 0 0.03;
+          dur: 2200;
+          dir: alternate;
+          loop: true;
+          easing: easeInOutSine;
+        ">
       </a-image>
 
     </a-entity>
 
-    <!-- AR 02 -->
+
+    <!-- ========================== -->
+    <!-- AR 02：第二張圖卡 PNG+GIF  -->
+    <!-- ========================== -->
+
     <a-entity
       id="target2"
       mindar-image-target="targetIndex: 1">
 
+      <!-- 中景：不動 -->
       <a-image
         src="#mid3"
         position="0 0 0.01"
         width="1.6"
         height="0.9"
-        material="shader: flat;
-                  transparent: true;
-                  depthWrite: false">
+        material="shader: flat; transparent: true;
+                  depthWrite: false; side: double">
       </a-image>
+
+      <!-- GIF 1 -->
+      <a-plane
+        id="gif1"
+        data-gif-src="./foreground2-1.gif"
+        position="0 0 0.02"
+        width="1.6"
+        height="0.9"
+        material="shader: flat; transparent: true;
+                  depthWrite: false; side: double">
+      </a-plane>
+
+      <!-- GIF 2 -->
+      <a-plane
+        id="gif2"
+        data-gif-src="./foreground2-2.gif"
+        position="0 0 0.03"
+        width="1.6"
+        height="0.9"
+        material="shader: flat; transparent: true;
+                  depthWrite: false; side: double">
+      </a-plane>
 
     </a-entity>
 
-    <!-- AR 03 -->
+
+    <!-- ========================== -->
+    <!-- AR 03：第三張圖卡          -->
+    <!-- ========================== -->
+
     <a-entity
       id="target3"
       mindar-image-target="targetIndex: 2">
 
+      <!-- 中景：左上到右下＋深度變化 -->
       <a-image
         src="#mid31"
-        position="0 0 0.08"
+        position="-0.12 0 0.08"
         width="1.1"
         height="0.75"
-        material="shader: flat;
-                  transparent: true;
-                  depthWrite: false">
+        material="shader: flat; transparent: true;
+                  depthWrite: false; side: double"
+        animation="
+          property: position;
+          from: -0.20 0.08 0.08;
+          to: 0.25 -0.08 0.16;
+          dur: 1800;
+          dir: alternate;
+          loop: true;
+          easing: easeInOutSine;
+        ">
       </a-image>
 
+      <!-- 前景：左右平移 -->
       <a-image
         src="#front3"
-        position="0.25 -0.15 0.18"
+        position="0.34 -0.15 0.18"
         width="0.65"
         height="0.6"
-        material="shader: flat;
-                  transparent: true;
-                  depthWrite: false">
+        material="shader: flat; transparent: true;
+                  depthWrite: false; side: double"
+        animation="
+          property: position;
+          from: 0.10 -0.15 0.18;
+          to: 0.40 -0.15 0.18;
+          dur: 2000;
+          dir: alternate;
+          loop: true;
+          easing: easeInOutSine;
+        ">
       </a-image>
 
     </a-entity>
 
-    <!-- AR 04 -->
+
+    <!-- ========================== -->
+    <!-- AR 04：第四張圖卡          -->
+    <!-- ========================== -->
+
     <a-entity
       id="target4"
       mindar-image-target="targetIndex: 3">
 
+      <!-- 中景：左上到右下平移 -->
       <a-image
         src="#mid4"
-        position="0 0 0.08"
+        position="-0.20 0.08 0.08"
         width="1.1"
         height="0.75"
-        material="shader: flat;
-                  transparent: true;
-                  depthWrite: false">
+        material="shader: flat; transparent: true;
+                  depthWrite: false; side: double"
+        animation="
+          property: position;
+          from: -0.20 0.08 0.08;
+          to: 0.25 -0.08 0.08;
+          dur: 3000;
+          dir: alternate;
+          loop: true;
+          easing: easeInOutSine;
+        ">
       </a-image>
 
     </a-entity>
@@ -242,15 +329,16 @@
 
 </div>
 
+
+<!-- 四張圖卡的背景切換 -->
 <script>
   const statusBox = document.getElementById("status");
-  const scene = document.getElementById("ar-scene");
 
   const backgrounds = [
-    document.getElementById("bg1"),
-    document.getElementById("bg2"),
-    document.getElementById("bg3"),
-    document.getElementById("bg4")
+    document.getElementById("background1"),
+    document.getElementById("background2"),
+    document.getElementById("background3"),
+    document.getElementById("background4")
   ];
 
   const targets = [
@@ -278,28 +366,17 @@
     }
   }
 
-  // 監聽 MindAR 啟動
-  scene.addEventListener("arReady", () => {
-    statusBox.textContent =
-      "AR 已啟動，請對準圖卡";
-  });
-
-  // 監聽 MindAR 錯誤
-  scene.addEventListener("arError", () => {
-    statusBox.textContent =
-      "AR 啟動失敗，請檢查相機權限";
-  });
-
-  // 四組辨識事件
   targets.forEach((target, index) => {
 
     target.addEventListener("targetFound", () => {
       activeTargets.add(index);
+      target.dataset.tracking = "true";
       updateBackground();
     });
 
     target.addEventListener("targetLost", () => {
       activeTargets.delete(index);
+      target.dataset.tracking = "false";
       updateBackground();
     });
 
@@ -313,16 +390,227 @@
         img.getAttribute("src");
     });
   });
+</script>
 
-  // PNG 資源載入完成
-  document.querySelector("a-assets")
-    .addEventListener("loaded", () => {
-      if (statusBox.textContent === "正在初始化 AR...") {
+
+<!-- GIF 動畫播放功能 -->
+<script type="module">
+  import {
+    parseGIF,
+    decompressFrames
+  } from "https://esm.sh/gifuct-js@2.1.2";
+
+  AFRAME.registerComponent("animated-gif", {
+
+    schema: {
+      src: {type: "string"}
+    },
+
+    init: function () {
+      this.ready = false;
+      this.frames = [];
+      this.index = 0;
+      this.elapsed = 0;
+
+      this.loadGif();
+    },
+
+    loadGif: async function () {
+      try {
+        const response = await fetch(this.data.src);
+
+        if (!response.ok) {
+          throw new Error("找不到 " + this.data.src);
+        }
+
+        const buffer = await response.arrayBuffer();
+        const gif = parseGIF(buffer);
+
+        this.frames = decompressFrames(gif, true);
+
+        const canvas = document.createElement("canvas");
+        canvas.width = gif.lsd.width;
+        canvas.height = gif.lsd.height;
+
+        this.canvas = canvas;
+        this.ctx = canvas.getContext("2d");
+
+        this.patchCanvas =
+          document.createElement("canvas");
+
+        this.patchCtx =
+          this.patchCanvas.getContext("2d");
+
+        this.texture = new THREE.CanvasTexture(canvas);
+
+        if (THREE.SRGBColorSpace) {
+          this.texture.colorSpace = THREE.SRGBColorSpace;
+        }
+
+        this.drawFrame(0, true);
+
+        const mesh = this.el.getObject3D("mesh");
+
+        if (!mesh) {
+          throw new Error("GIF 平面尚未建立");
+        }
+
+        const oldMaterial = mesh.material;
+
+        mesh.material = new THREE.MeshBasicMaterial({
+          map: this.texture,
+          transparent: true,
+          side: THREE.DoubleSide,
+          depthWrite: false
+        });
+
+        if (oldMaterial) {
+          oldMaterial.dispose();
+        }
+
+        this.ready = true;
+
+      } catch (error) {
+        console.error(error);
         statusBox.textContent =
-          "PNG 已載入，正在啟動相機...";
+          "GIF 載入失敗：" + this.data.src;
+      }
+    },
+
+    drawFrame: function (index, reset) {
+      if (reset) {
+        this.ctx.clearRect(
+          0, 0,
+          this.canvas.width,
+          this.canvas.height
+        );
+
+        this.previousFrame = null;
+        this.savedImage = null;
+      }
+
+      if (this.previousFrame) {
+        const previous = this.previousFrame;
+
+        if (previous.disposalType === 2) {
+          this.ctx.clearRect(
+            previous.dims.left,
+            previous.dims.top,
+            previous.dims.width,
+            previous.dims.height
+          );
+        }
+
+        if (
+          previous.disposalType === 3 &&
+          this.savedImage
+        ) {
+          this.ctx.putImageData(
+            this.savedImage, 0, 0
+          );
+        }
+      }
+
+      const frame = this.frames[index];
+      const d = frame.dims;
+
+      this.savedImage =
+        frame.disposalType === 3
+          ? this.ctx.getImageData(
+              0, 0,
+              this.canvas.width,
+              this.canvas.height
+            )
+          : null;
+
+      this.patchCanvas.width = d.width;
+      this.patchCanvas.height = d.height;
+
+      const imageData = new ImageData(
+        frame.patch,
+        d.width,
+        d.height
+      );
+
+      this.patchCtx.putImageData(
+        imageData, 0, 0
+      );
+
+      this.ctx.drawImage(
+        this.patchCanvas,
+        d.left,
+        d.top
+      );
+
+      this.previousFrame = frame;
+      this.texture.needsUpdate = true;
+    },
+
+    tick: function (time, delta) {
+      if (!this.ready) return;
+
+      const target =
+        this.el.closest("[mindar-image-target]");
+
+      if (
+        !target ||
+        target.dataset.tracking !== "true"
+      ) {
+        return;
+      }
+
+      this.elapsed += Math.min(delta, 200);
+
+      let steps = 0;
+
+      while (steps < 5) {
+        const current = this.frames[this.index];
+        const delay = Math.max(
+          current.delay || 100, 40
+        );
+
+        if (this.elapsed < delay) break;
+
+        this.elapsed -= delay;
+
+        this.index =
+          (this.index + 1) % this.frames.length;
+
+        this.drawFrame(
+          this.index,
+          this.index === 0
+        );
+
+        steps++;
+      }
+    },
+
+    remove: function () {
+      if (this.texture) {
+        this.texture.dispose();
+      }
+    }
+  });
+
+  // GIF 元件註冊後才掛載，避免初始化順序錯誤
+  document.querySelectorAll("[data-gif-src]")
+    .forEach(element => {
+
+      const src = element.getAttribute("data-gif-src");
+
+      element.addEventListener("object3dset", function () {
+        if (
+          element.getObject3D("mesh") &&
+          !element.hasAttribute("animated-gif")
+        ) {
+          element.setAttribute("animated-gif", "src", src);
+        }
+      });
+
+      if (element.getObject3D("mesh")) {
+        element.setAttribute("animated-gif", "src", src);
       }
     });
-
 </script>
 
 </body>
